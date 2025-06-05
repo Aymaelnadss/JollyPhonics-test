@@ -1,0 +1,372 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #ffe01a; /* Jolly Phonics distinguishing yellow */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    color: #333;
+    overflow-x: hidden;
+}
+
+header {
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.logo {
+    height: 80px;
+    margin-right: 20px;
+}
+
+h1 {
+    color: #c00; /* Red color for heading, common in Jolly Phonics branding */
+    margin: 0;
+    font-size: 2.2em;
+}
+
+.author {
+    font-style: italic;
+    font-size: 1.1em;
+    color: #555;
+    margin-top: 10px;
+}
+
+#test-container {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 700px;
+    text-align: center;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative; /* For balloon animation */
+}
+
+.question-screen {
+    display: none; /* Hidden by default, shown by JS */
+    width: 100%;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.question-screen.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+    color: #008000; /* Green for instructions */
+    margin-bottom: 25px;
+    font-size: 1.8em;
+}
+
+.letter-display {
+    font-size: 6em;
+    font-weight: bold;
+    color: #00008b; /* Dark blue */
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.word-display {
+    font-size: 2em;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+input[type="text"] {
+    padding: 15px;
+    font-size: 1.5em;
+    width: 80%;
+    max-width: 300px;
+    border: 3px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+    transition: border-color 0.3s ease;
+}
+
+input[type="text"]:focus {
+    border-color: #008000;
+    outline: none;
+}
+
+button {
+    background-color: #4CAF50; /* Green */
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.3em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 0 10px;
+}
+
+button:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.feedback-icon {
+    width: 100px;
+    height: 100px;
+    margin-top: 20px;
+    display: none; /* Hidden by default */
+}
+
+/* Balloon animation styles (simple CSS animation for demonstration) */
+.balloon-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.balloon {
+    position: absolute;
+    bottom: -50px;
+    width: 40px;
+    height: 60px;
+    background-color: red; /* Example color */
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    opacity: 0.8;
+    animation: floatUp 5s ease-out forwards;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(0.8); opacity: 0.8; }
+    100% { transform: translateY(-100vh) scale(1.2); opacity: 0; }
+}
+
+.balloon:nth-child(2) { background-color: blue; left: 20%; animation-duration: 4.5s; animation-delay: 0.5s; }
+.balloon:nth-child(3) { background-color: green; left: 40%; animation-duration: 5.5s; animation-delay: 0.2s; }
+.balloon:nth-child(4) { background-color: yellow; left: 60%; animation-duration: 5s; animation-delay: 0.7s; }
+.balloon:nth-child(5) { background-color: purple; left: 80%; animation-duration: 4s; animation-delay: 1s; }
+script.js (The interactive logic)
+JavaScript
+
+document.addEventListener('DOMContentLoaded', () => {
+    const testContainer = document.getElementById('test-container');
+    const clapSound = document.getElementById('clap-sound');
+    const beepSound = document.getElementById('beep-sound');
+
+    const sounds = ['s', 'a', 'i', 't', 'p', 'n'];
+    const words = ['it', 'at', 'sit', 'sat', 'pit', 'pat', 'pant', 'spin'];
+
+    let currentQuestionIndex = 0;
+    let currentSubQuestionIndex = 0;
+
+    // Helper to play sound
+    const playSound = (audioElement) => {
+        audioElement.currentTime = 0; // Rewind to start
+        audioElement.play();
+    };
+
+    // Helper for success feedback
+    const showSuccess = () => {
+        playSound(clapSound);
+        testContainer.innerHTML += `
+            <div class="balloon-container">
+                <div class="balloon" style="left: ${Math.random() * 80 + 10}%;"></div>
+                <div class="balloon" style="left: ${Math.random() * 80 + 10}%;"></div>
+                <div class="balloon" style="left: ${Math.random() * 80 + 10}%;"></div>
+                <div class="balloon" style="left: ${Math.random() * 80 + 10}%;"></div>
+                <div class="balloon" style="left: ${Math.random() * 80 + 10}%;"></div>
+            </div>
+        `;
+        const feedbackIcon = document.createElement('img');
+        feedbackIcon.src = 'images/happy_face.png'; // Make sure you have this image
+        feedbackIcon.alt = 'Success';
+        feedbackIcon.classList.add('feedback-icon');
+        feedbackIcon.style.display = 'block';
+        testContainer.appendChild(feedbackIcon);
+        setTimeout(() => {
+            feedbackIcon.remove();
+            document.querySelectorAll('.balloon-container').forEach(el => el.remove());
+        }, 2000);
+    };
+
+    // Helper for error feedback
+    const showError = () => {
+        playSound(beepSound);
+        const feedbackIcon = document.createElement('img');
+        feedbackIcon.src = 'images/sad_face.png'; // Make sure you have this image
+        feedbackIcon.alt = 'Error';
+        feedbackIcon.classList.add('feedback-icon');
+        feedbackIcon.style.display = 'block';
+        testContainer.appendChild(feedbackIcon);
+        setTimeout(() => {
+            feedbackIcon.remove();
+        }, 1500);
+    };
+
+    // --- Question 1: Say the Sounds ---
+    const loadQuestion1 = () => {
+        if (currentSubQuestionIndex < sounds.length) {
+            const letter = sounds[currentSubQuestionIndex];
+            testContainer.innerHTML = `
+                <div class="question-screen active" id="q1-screen-${currentSubQuestionIndex}">
+                    <h2>السؤال الأول: قل الأصوات</h2>
+                    <p class="word-display">قل صوت الحرف عندما يظهر.</p>
+                    <div class="letter-display">${letter.toUpperCase()}</div>
+                    <button id="q1-next-btn">التالي</button>
+                </div>
+            `;
+            // Play the sound after rendering the letter
+            const letterSound = new Audio(`audio/${letter}.mp3`); // Make sure you have audio/s.mp3, audio/a.mp3, etc.
+            letterSound.play();
+
+            document.getElementById('q1-next-btn').onclick = () => {
+                currentSubQuestionIndex++;
+                loadQuestion1(); // Load the next sound
+            };
+        } else {
+            // All sounds played, move to next question
+            currentQuestionIndex++;
+            currentSubQuestionIndex = 0; // Reset for next question
+            loadQuestion();
+        }
+    };
+
+    // --- Question 2: Listen and Write Letters ---
+    const loadQuestion2 = () => {
+        if (currentSubQuestionIndex < sounds.length) {
+            const correctLetter = sounds[currentSubQuestionIndex];
+            testContainer.innerHTML = `
+                <div class="question-screen active" id="q2-screen-${currentSubQuestionIndex}">
+                    <h2>السؤال الثاني: استمع واكتب الحرف</h2>
+                    <p class="word-display">استمع إلى الصوت واكتب الحرف الذي يمثله.</p>
+                    <button id="q2-play-sound-btn">استمع إلى الصوت</button><br><br>
+                    <input type="text" id="q2-input" maxlength="1" placeholder="اكتب هنا">
+                    <button id="q2-check-btn">تحقق</button>
+                </div>
+            `;
+            const letterSound = new Audio(`audio/${correctLetter}.mp3`);
+
+            document.getElementById('q2-play-sound-btn').onclick = () => {
+                letterSound.play();
+            };
+
+            document.getElementById('q2-check-btn').onclick = () => {
+                const userAnswer = document.getElementById('q2-input').value.toLowerCase().trim();
+                if (userAnswer === correctLetter) {
+                    showSuccess();
+                    setTimeout(() => {
+                        currentSubQuestionIndex++;
+                        loadQuestion2();
+                    }, 2000); // Wait for feedback animation
+                } else {
+                    showError();
+                    document.getElementById('q2-input').value = ''; // Clear input for retry
+                }
+            };
+        } else {
+            currentQuestionIndex++;
+            currentSubQuestionIndex = 0;
+            loadQuestion();
+        }
+    };
+
+    // --- Question 3: Listen and Write Words ---
+    const loadQuestion3 = () => {
+        if (currentSubQuestionIndex < words.length) {
+            const correctWord = words[currentSubQuestionIndex];
+            testContainer.innerHTML = `
+                <div class="question-screen active" id="q3-screen-${currentSubQuestionIndex}">
+                    <h2>السؤال الثالث: استمع واكتب الكلمة</h2>
+                    <p class="word-display">استمع إلى الكلمة واكتبها.</p>
+                    <button id="q3-play-sound-btn">استمع إلى الكلمة</button><br><br>
+                    <input type="text" id="q3-input" placeholder="اكتب الكلمة هنا">
+                    <button id="q3-check-btn">تحقق</button>
+                </div>
+            `;
+            const wordSound = new Audio(`audio/${correctWord}.mp3`); // Make sure you have audio/it.mp3, audio/at.mp3, etc.
+
+            document.getElementById('q3-play-sound-btn').onclick = () => {
+                wordSound.play();
+            };
+
+            document.getElementById('q3-check-btn').onclick = () => {
+                const userAnswer = document.getElementById('q3-input').value.toLowerCase().trim();
+                if (userAnswer === correctWord) {
+                    showSuccess();
+                    setTimeout(() => {
+                        currentSubQuestionIndex++;
+                        loadQuestion3();
+                    }, 2000);
+                } else {
+                    showError();
+                    document.getElementById('q3-input').value = '';
+                }
+            };
+        } else {
+            // Test finished
+            testContainer.innerHTML = `
+                <div class="question-screen active">
+                    <h2>تهانينا! لقد أكملت الاختبار!</h2>
+                    <p>أحسنت صنعًا!</p>
+                    <img src="images/happy_face.png" alt="Happy Face" style="width:150px; margin-top: 30px;">
+                </div>
+            `;
+            showSuccess(); // Final success animation
+        }
+    };
+
+    // Main function to load questions based on currentQuestionIndex
+    const loadQuestion = () => {
+        if (currentQuestionIndex === 0) {
+            loadQuestion1();
+        } else if (currentQuestionIndex === 1) {
+            loadQuestion2();
+        } else if (currentQuestionIndex === 2) {
+            loadQuestion3();
+        } else {
+            // End of test
+            testContainer.innerHTML = `
+                <div class="question-screen active">
+                    <h2>تهانينا! لقد أكملت الاختبار!</h2>
+                    <p>أحسنت صنعًا!</p>
+                    <img src="images/happy_face.png" alt="Happy Face" style="width:150px; margin-top: 30px;">
+                </div>
+            `;
+             showSuccess(); // Final success animation
+        }
+    };
+
+    // Start the test
+    loadQuestion();
+});
